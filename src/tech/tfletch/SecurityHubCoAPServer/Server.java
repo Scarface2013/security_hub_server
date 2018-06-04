@@ -19,11 +19,11 @@ public class Server extends CoapServer {
     private Server() throws SocketException {
         // Internal Tools
         SecurityHub securityHub = new SecurityHub();
-        Norman norman = new Norman();
+        Norman norman = new Norman(securityHub);
 
         // Endpoints
-        this.add( new Devices(securityHub) ); // /devices/
-        this.add( new Messages(norman) );           // /messages/
+        this.add( new Devices(securityHub, norman) ); // /devices/
+        this.add( new Messages(norman) );     // /messages/
     }
 
     private void addEndpoints(){
@@ -44,7 +44,6 @@ public class Server extends CoapServer {
             server.start();
 
             System.out.println("Server started on " + server.getEndpoint(COAP_PORT).getUri().toString());
-
         }catch(SocketException e){
             System.err.println("Error creating server on port" + COAP_PORT);
         }
