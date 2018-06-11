@@ -5,24 +5,22 @@ import org.eclipse.californium.core.CoapResource;
 import org.eclipse.californium.core.coap.CoAP;
 import org.eclipse.californium.core.server.resources.CoapExchange;
 import tech.tfletch.SecurityHubCoAPServer.Device;
-import tech.tfletch.SecurityHubCoAPServer.Norman;
+import tech.tfletch.SecurityHubCoAPServer.QueueHandler;
 import tech.tfletch.SecurityHubCoAPServer.Responses.DeviceConfiguration;
 import tech.tfletch.SecurityHubCoAPServer.SecurityHub;
 
-import java.awt.image.AreaAveragingScaleFilter;
-import java.util.ArrayList;
 import java.util.stream.Collectors;
 
 public class Devices extends CoapResource {
 
     private SecurityHub securityHub;
-    private Norman norman;
+    private QueueHandler queueHandler;
 
-    public Devices(SecurityHub securityHub, Norman norman){
+    public Devices(SecurityHub securityHub){
         super("Devices");
 
         this.securityHub = securityHub;
-        this.norman = norman;
+        this.queueHandler = securityHub.getQueueHandler();
     }
 
     @Override
@@ -73,10 +71,8 @@ public class Devices extends CoapResource {
         deviceConfiguration.address = exchange.getSourceAddress();
 
         // Add device to SH internal representation
-        securityHub.addDevice(new Device( deviceConfiguration ));
-
-        // Add device to topic list and buckets
-        norman.addBucket(deviceConfiguration.deviceName);
+        Device device = new Device( deviceConfiguration );
+        securityHub.addDevice(device);
 
         exchange.respond(CoAP.ResponseCode.VALID);
     }

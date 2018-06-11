@@ -6,6 +6,7 @@ import org.eclipse.californium.core.network.EndpointManager;
 import org.eclipse.californium.core.network.config.NetworkConfig;
 import tech.tfletch.SecurityHubCoAPServer.Resources.Devices;
 import tech.tfletch.SecurityHubCoAPServer.Resources.Messages;
+import tech.tfletch.SecurityHubCoAPServer.Resources.Topics;
 
 import java.net.Inet4Address;
 import java.net.InetAddress;
@@ -19,11 +20,18 @@ public class Server extends CoapServer {
     private Server() throws SocketException {
         // Internal Tools
         SecurityHub securityHub = new SecurityHub();
-        Norman norman = new Norman(securityHub);
+        QueueHandler queueHandler = new QueueHandler();
+
+        securityHub.attachQueueHandler(queueHandler);
 
         // Endpoints
-        this.add( new Devices(securityHub, norman) ); // /devices/
-        this.add( new Messages(norman) );     // /messages/
+        this.add(
+            new Devices(securityHub)
+        ).add(
+            new Messages(securityHub)
+        ).add(
+            new Topics(securityHub)
+        );
     }
 
     private void addEndpoints(){

@@ -5,19 +5,28 @@ import java.util.ArrayList;
 
 public class SecurityHub {
     private ArrayList<Device> deviceList;
+    private QueueHandler queueHandler;
 
-    public SecurityHub(){
+    SecurityHub(){
         deviceList = new ArrayList<>();
     }
 
-    public void addDevice(Device device){
-        deviceList.add( device );
+    // Queue Handler Methods
+    public QueueHandler getQueueHandler() {
+        return queueHandler;
+    }
+    void attachQueueHandler(QueueHandler queueHandler){
+        this.queueHandler = queueHandler;
     }
 
+    // Device Methods
+    public void addDevice(Device device){
+        deviceList.add( device );
+        this.getQueueHandler().addBucket(device);
+    }
     public ArrayList<Device> getConnectedDevices(){
         return deviceList;
     }
-
     public Device getDeviceByIP(InetAddress address){
         for(Device device : deviceList){
             if(device.getAddress().equals(address)){
@@ -26,4 +35,5 @@ public class SecurityHub {
         }
         return null;
     }
+
 }
