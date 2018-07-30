@@ -87,6 +87,10 @@ public class Device {
             );
             e.printStackTrace(System.err);
         }
+        finally{
+            CoapClient unlocker = new CoapClient("coap://" + address.toString() + ":5683/unlock");
+            unlocker.post("",MediaTypeRegistry.TEXT_PLAIN);
+        }
     }
 
 }
