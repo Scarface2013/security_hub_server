@@ -12,7 +12,6 @@ import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
-import java.util.Arrays;
 
 /*
 * Server is the way in which the devices interact with the Security Hub
@@ -44,12 +43,7 @@ public class Server extends CoapServer {
             // Only bind on IPV4 addresses
             // Once the SH is actually up and running, we should explicitly
             // bind to out wlan0 address (10.0.0.1 currently)
-            if( addr instanceof Inet4Address &&
-                Arrays.equals(
-                    addr.getAddress(),
-                    new byte[]{0x0A, 0x00, 0x00, 0x01}
-                )
-            ){
+            if( addr instanceof Inet4Address && !addr.isLoopbackAddress()){
                 CoapEndpoint endpoint = new CoapEndpoint(new InetSocketAddress(addr,COAP_PORT));
                 this.addEndpoint(endpoint);
             }

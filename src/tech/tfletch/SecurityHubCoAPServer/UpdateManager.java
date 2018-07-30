@@ -36,8 +36,10 @@ public class UpdateManager implements Runnable{
         System.out.println("Update manager started");
         while(true) {
             for (Device d : trackedDevices) {
-                Future<DeviceUpdateInformation> future = pool.submit(new UpdateService(d));
-                deviceFutureHashMap.put(d, future);
+                if(deviceFutureHashMap.get(d) == null) {
+                    Future<DeviceUpdateInformation> future = pool.submit(new UpdateService(d));
+                    deviceFutureHashMap.put(d, future);
+                }
             }
 
             // Wait for all our futures to resolve and then deploy update if
@@ -50,9 +52,11 @@ public class UpdateManager implements Runnable{
                             DeviceUpdateInformation deviceUpdateInformation
                                 = deviceFutureHashMap.get(d).get();
 
-                            pool.execute(new UpdateDeployer(d, deviceUpdateInformation));
-                            deviceFutureHashMap.remove(d);
+                            if(deviceUpdateInformation.needsUpdate) {
+                                pool.execute(new UpdateDeployer(d, deviceUpdateInformation));
+                                System.out.println("Update for Device=" + d.getName() + " Dispatched");
                             }
+                        }
                     }
                     catch(InterruptedException|ExecutionException e){
                         System.err.println(
@@ -60,6 +64,9 @@ public class UpdateManager implements Runnable{
                             " on device=" + d.getName()
                         );
                         e.printStackTrace(System.err);
+                    }
+                    finally{
+                        deviceFutureHashMap.remove(d);
                     }
                 }
                 try {

@@ -60,6 +60,10 @@ public class UpdateService implements Callable<DeviceUpdateInformation> {
                     break;
                 }
             }
+
+            // Attach needsUpdate to the return object so that updateManger can
+            // process accordingly
+            deviceUpdateInformation.needsUpdate = needsUpdate;
         }
         catch(IOException e){
             System.err.println("Error: Problem contacting manufacturer for update information");
