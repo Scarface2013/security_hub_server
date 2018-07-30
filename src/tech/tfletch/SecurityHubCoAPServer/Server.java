@@ -13,6 +13,9 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
 
+/*
+* Server is the way in which the devices interact with the Security Hub
+* */
 public class Server extends CoapServer {
 
     private static final int COAP_PORT = NetworkConfig.getStandard().getInt(NetworkConfig.Keys.COAP_PORT);
@@ -23,6 +26,7 @@ public class Server extends CoapServer {
         QueueHandler queueHandler = new QueueHandler();
 
         securityHub.attachQueueHandler(queueHandler);
+        securityHub.attachUpdateHandler(new UpdateManager());
 
         // Endpoints
         this.add(
@@ -37,7 +41,9 @@ public class Server extends CoapServer {
     private void addEndpoints(){
         for( InetAddress addr : EndpointManager.getEndpointManager().getNetworkInterfaces() ){
             // Only bind on IPV4 addresses
-            if(addr instanceof Inet4Address || addr.isLoopbackAddress()){
+            // Once the SH is actually up and running, we should explicitly
+            // bind to out wlan0 address (10.0.0.1 currently)
+            if(addr instanceof Inet4Address && !addr.isLoopbackAddress()){
                 CoapEndpoint endpoint = new CoapEndpoint(new InetSocketAddress(addr,COAP_PORT));
                 this.addEndpoint(endpoint);
             }
@@ -45,6 +51,8 @@ public class Server extends CoapServer {
     }
 
     public static void main(String[] args){
+
+        // Launch the CoAP Server
         try {
             Server server = new Server();
 
@@ -55,5 +63,6 @@ public class Server extends CoapServer {
         }catch(SocketException e){
             System.err.println("Error creating server on port" + COAP_PORT);
         }
+
     }
 }

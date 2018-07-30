@@ -68,6 +68,10 @@ public class Devices extends CoapResource {
             exchange.respond(CoAP.ResponseCode.BAD_REQUEST, "Name not supplied");
             return;
         }
+        else if(deviceConfiguration.deviceType == null){
+            exchange.respond(CoAP.ResponseCode.BAD_REQUEST, "Device Type not supplied");
+            return;
+        }
         deviceConfiguration.address = exchange.getSourceAddress();
 
         // Add device to SH internal representation
