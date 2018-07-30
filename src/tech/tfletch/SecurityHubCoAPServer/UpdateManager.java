@@ -56,6 +56,7 @@ public class UpdateManager implements Runnable{
                                 pool.execute(new UpdateDeployer(d, deviceUpdateInformation));
                                 System.out.println("Update for Device=" + d.getName() + " Dispatched");
                                 deviceFutureHashMap.remove(d);
+                                d.needsUpdate = false;
                             }
                             else{
                                 deviceFutureHashMap.remove(d);
