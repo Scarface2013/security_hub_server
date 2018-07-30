@@ -52,9 +52,14 @@ public class UpdateManager implements Runnable{
                             DeviceUpdateInformation deviceUpdateInformation
                                 = deviceFutureHashMap.get(d).get();
 
-                            if(deviceUpdateInformation.needsUpdate) {
+                            if(d.needsUpdate) {
                                 pool.execute(new UpdateDeployer(d, deviceUpdateInformation));
                                 System.out.println("Update for Device=" + d.getName() + " Dispatched");
+                                deviceFutureHashMap.remove(d);
+                            }
+                            else{
+                                deviceFutureHashMap.remove(d);
+                                System.out.println("Update not needed for Device=" + d.getName());
                             }
                         }
                     }
@@ -63,10 +68,8 @@ public class UpdateManager implements Runnable{
                             "Problem executing updateService future" +
                             " on device=" + d.getName()
                         );
-                        e.printStackTrace(System.err);
-                    }
-                    finally{
                         deviceFutureHashMap.remove(d);
+                        e.printStackTrace(System.err);
                     }
                 }
                 try {
@@ -78,6 +81,7 @@ public class UpdateManager implements Runnable{
             }
             // Wait COOLDOWN between update checks
             try {
+                System.out.println("Finished one update cycle. Waiting " + COOLDOWN + "ms");
                 Thread.sleep(COOLDOWN);
             }
             catch(InterruptedException e){

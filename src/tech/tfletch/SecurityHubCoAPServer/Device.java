@@ -23,6 +23,8 @@ public class Device {
     private URL manufacturerURL;
     private String currentVersion;
 
+    public boolean needsUpdate = false;
+
     private InetAddress address;
     public InetAddress getAddress() {
         return address;

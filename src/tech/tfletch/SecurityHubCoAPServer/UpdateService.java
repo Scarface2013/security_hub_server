@@ -21,7 +21,6 @@ public class UpdateService implements Callable<DeviceUpdateInformation> {
         URL manufacturerBaseURL = device.getManufacturerURL();
 
         // Check manufacturer for update information
-        boolean needsUpdate = false;
         DeviceUpdateInformation deviceUpdateInformation;
         try {
             URL manufacturerAvailableUpdatesURL = new URL(
@@ -50,7 +49,7 @@ public class UpdateService implements Callable<DeviceUpdateInformation> {
 
             for(int i = 0; i < 3; i++){
                 if(Integer.parseInt(currentVersion[i]) < Integer.parseInt(nextAvailableVersion[i])){
-                    needsUpdate = true;
+                    device.needsUpdate = true;
                     System.out.println("Update found for device=" + device.getName() + " " +
                         "(deviceType=" + device.getDeviceType() + "). " +
                         "CurrentVersion=" + device.getCurrentVersion() + " " +
@@ -60,10 +59,6 @@ public class UpdateService implements Callable<DeviceUpdateInformation> {
                     break;
                 }
             }
-
-            // Attach needsUpdate to the return object so that updateManger can
-            // process accordingly
-            deviceUpdateInformation.needsUpdate = needsUpdate;
         }
         catch(IOException e){
             System.err.println("Error: Problem contacting manufacturer for update information");
@@ -74,7 +69,7 @@ public class UpdateService implements Callable<DeviceUpdateInformation> {
         // If manufacturer has newer update, download it and save it to disk to
         // be distributed to the device
         try {
-            if (needsUpdate && updateDoesNotExist(deviceUpdateInformation)) {
+            if (device.needsUpdate && updateDoesNotExist(deviceUpdateInformation)) {
 
                 String updatePath = "update/" + device.getDeviceType() + "/" + deviceUpdateInformation.updateId;
                 URL manufacturerUpdateURL = new URL(
