@@ -4,8 +4,10 @@ import com.google.gson.JsonParseException;
 import org.eclipse.californium.core.CoapResource;
 import org.eclipse.californium.core.coap.CoAP;
 import org.eclipse.californium.core.server.resources.CoapExchange;
+import tech.tfletch.SecurityHubCoAPServer.Device;
 import tech.tfletch.SecurityHubCoAPServer.Responses.Message;
 import tech.tfletch.SecurityHubCoAPServer.SecurityHub;
+import tech.tfletch.SecurityHubCoAPServer.Utility.DeviceNotFoundException;
 import tech.tfletch.SecurityHubCoAPServer.Utility.TopicNotFoundException;
 
 public class Messages extends CoapResource {
@@ -22,22 +24,32 @@ public class Messages extends CoapResource {
     public void handlePOST(CoapExchange exchange) {
         exchange.accept();
         try {
+            Device device = securityHub.getDeviceByIP(exchange.getSourceAddress());
+
             Message message = Message.fromJson(exchange.getRequestText());
             securityHub.getQueueHandler().addMessage(message);
-            exchange.respond(CoAP.ResponseCode.VALID);
+            exchange.respond(CoAP.ResponseCode.CREATED);
+            System.err.println("Message reveiced from " + device.getName() + "(" + device.getAddress().toString() + ")");
         }catch(TopicNotFoundException e){
             exchange.respond(CoAP.ResponseCode.BAD_REQUEST, "Topic not found");
         }catch(JsonParseException e){
             exchange.respond(CoAP.ResponseCode.BAD_REQUEST, "Malformed JSON");
+        }catch(DeviceNotFoundException e){
+            exchange.respond(CoAP.ResponseCode.UNAUTHORIZED, "You must register your device before you can sent a message");
         }
     }
 
     @Override
     public void handleGET(CoapExchange exchange) {
         exchange.accept();
-        Message message = securityHub.getQueueHandler().nextMessage(
-            securityHub.getDeviceByIP(exchange.getSourceAddress())
-        );
-        exchange.respond(CoAP.ResponseCode.VALID, Message.toJson(message));
+        try {
+            Message message = securityHub.getQueueHandler().nextMessage(
+                    securityHub.getDeviceByIP(exchange.getSourceAddress())
+            );
+            exchange.respond(CoAP.ResponseCode.CONTENT, Message.toJson(message));
+        }
+        catch(DeviceNotFoundException e){
+           exchange.respond(CoAP.ResponseCode.UNAUTHORIZED, "You must register your device before you can poll for messages");
+        }
     }
 }

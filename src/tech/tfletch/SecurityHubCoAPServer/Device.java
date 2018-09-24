@@ -40,11 +40,27 @@ public class Device {
     }
 
     public Device(DeviceConfiguration deviceConfiguration){
-        this.name = deviceConfiguration.deviceName;
+        this.name = deviceConfiguration.deviceID;
         this.address = deviceConfiguration.address;
         this.deviceType = deviceConfiguration.deviceType;
         this.manufacturerURL = deviceConfiguration.manufacturerURL;
         this.currentVersion = deviceConfiguration.currentVersion;
+    }
+
+    public DeviceConfiguration deviceConfiguration(){
+        DeviceConfiguration deviceConfiguration = new DeviceConfiguration();
+
+        deviceConfiguration.deviceType = this.deviceType;
+        deviceConfiguration.deviceID = this.name;
+        deviceConfiguration.currentVersion = this.currentVersion;
+        deviceConfiguration.manufacturerURL = this.manufacturerURL;
+
+        return deviceConfiguration;
+    }
+
+    @Override
+    public String toString(){
+        return DeviceConfiguration.toJson(this.deviceConfiguration());
     }
 
     public String getName() {

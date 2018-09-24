@@ -14,11 +14,12 @@ public class DeviceConfiguration {
             .registerTypeAdapter(URL.class, new URLParser())
             .create();
 
-    public String deviceName;
-    public InetAddress address;
-    public URL manufacturerURL;
+    public String deviceID;
     public String deviceType;
+    public URL manufacturerURL;
     public String currentVersion;
+
+    public InetAddress address;
 
     public static DeviceConfiguration fromJson(String json){
         return gson.fromJson(json, DeviceConfiguration.class);

@@ -4,6 +4,7 @@ import org.eclipse.californium.core.CoapServer;
 import org.eclipse.californium.core.network.CoapEndpoint;
 import org.eclipse.californium.core.network.EndpointManager;
 import org.eclipse.californium.core.network.config.NetworkConfig;
+import tech.tfletch.SecurityHubCoAPServer.Resources.Device;
 import tech.tfletch.SecurityHubCoAPServer.Resources.Devices;
 import tech.tfletch.SecurityHubCoAPServer.Resources.Messages;
 import tech.tfletch.SecurityHubCoAPServer.Resources.Topics;
@@ -30,7 +31,9 @@ public class Server extends CoapServer {
 
         // Endpoints
         this.add(
-            new Devices(securityHub)
+            new Devices(securityHub).add(
+                new Device(securityHub)
+            )
         ).add(
             new Messages(securityHub)
         ).add(

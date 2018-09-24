@@ -4,13 +4,13 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 public class Message {
-    public String topic;
+    public String topicID;
     public String messageBody;
 
     private static Gson gson = new GsonBuilder().create();
 
     public Message(String topic, String messageBody){
-        this.topic = topic;
+        this.topicID = topic;
         this.messageBody = messageBody;
     }
 

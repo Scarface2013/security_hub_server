@@ -9,7 +9,7 @@ public class Topic implements Subscribable {
         this.name = name;
     }
     public Topic(TopicConfiguration topicConfiguration){
-        name = topicConfiguration.topicName;
+        name = topicConfiguration.topicID;
     }
 
     public String getName() {

@@ -5,79 +5,88 @@ import org.eclipse.californium.core.CoapResource;
 import org.eclipse.californium.core.coap.CoAP;
 import org.eclipse.californium.core.server.resources.CoapExchange;
 import tech.tfletch.SecurityHubCoAPServer.Device;
-import tech.tfletch.SecurityHubCoAPServer.QueueHandler;
 import tech.tfletch.SecurityHubCoAPServer.Responses.DeviceConfiguration;
 import tech.tfletch.SecurityHubCoAPServer.SecurityHub;
+import tech.tfletch.SecurityHubCoAPServer.Utility.DeviceNotFoundException;
 
 import java.util.stream.Collectors;
 
 public class Devices extends CoapResource {
 
     private SecurityHub securityHub;
-    private QueueHandler queueHandler;
 
     public Devices(SecurityHub securityHub){
         super("Devices");
 
         this.securityHub = securityHub;
-        this.queueHandler = securityHub.getQueueHandler();
     }
 
     @Override
     public void handleGET(CoapExchange exchange) {
-        StringBuilder response = new StringBuilder();
         exchange.accept();
+        try {
+            // Permissions aren't implemented yet so we technically don't need the device, but we will and
+            // we don't want unregistered devices accessing any info
+            Device device = securityHub.getDeviceByIP(exchange.getSourceAddress());
 
-        response.append("{\"messageBody\":[");
-        response.append(
-                securityHub.getConnectedDevices()
-                .stream()
-                .map(Device::getName)
-                .collect(Collectors.joining(","))
-        );
-        response.append("]}");
+            exchange.respond(CoAP.ResponseCode.CONTENT, "[" +
+                    securityHub.getConnectedDevices()
+                            .stream()
+                            .map(Device::getName)
+                            .collect(Collectors.joining(",")) + "]"
+            );
 
-        exchange.respond(CoAP.ResponseCode.CONTENT, response.toString());
+        }catch(DeviceNotFoundException e){
+            exchange.respond(CoAP.ResponseCode.UNAUTHORIZED, "You must register your device before you can GET" +
+                    " active devices");
+        }
     }
 
     @Override
     public void handlePOST(CoapExchange exchange) {
-        // Check if address is already registered
-        for( Device device : securityHub.getConnectedDevices()){
-            if(exchange.getSourceAddress().equals(device.getAddress())){
-                exchange.respond(CoAP.ResponseCode.BAD_REQUEST, "Address already registered");
-                return;
+        exchange.accept();
+
+        // Check if address is already registered. We _expect_ an Exception, and die if we don't get one (odd, I know)
+        // This will eventually get overhauled to allow devices to re-POST themselves to update their config
+        try{
+            Device device = securityHub.getDeviceByIP(exchange.getSourceAddress());
+
+            exchange.respond(CoAP.ResponseCode.BAD_REQUEST, "Address already registered");
+        }
+        catch (DeviceNotFoundException e){
+
+            // Parse payload
+            try {
+                DeviceConfiguration deviceConfiguration
+                    = DeviceConfiguration.fromJson(exchange.getRequestText());
+
+                // GSON doesn't have a way to define required fields...
+                if(deviceConfiguration == null || deviceConfiguration.deviceID == null){
+                    exchange.respond(CoAP.ResponseCode.BAD_REQUEST, "deviceID not supplied");
+                    return;
+                }
+                else if(deviceConfiguration.deviceType == null){
+                    exchange.respond(CoAP.ResponseCode.BAD_REQUEST, "deviceType not supplied");
+                    return;
+                }
+
+                // Until we get proper security in place, devices are 'verified' by their IP.
+                // It's Ick and brittle and terrible but it's the easiest way to simulate provenance
+                // (And doesn't require me to dirty my JSON specs in the meantime)
+                deviceConfiguration.address = exchange.getSourceAddress();
+
+                // Add device to SH internal representation
+                Device device = new Device( deviceConfiguration );
+                securityHub.addDevice(device);
+
+                exchange.respond(CoAP.ResponseCode.CREATED);
+            }
+            catch(JsonParseException ee){
+                exchange.respond(
+                    CoAP.ResponseCode.BAD_REQUEST,
+                    "Invalid DeviceConfiguration JSON format"
+                );
             }
         }
-
-        // Parse payload
-        DeviceConfiguration deviceConfiguration;
-        try {
-            deviceConfiguration
-                = DeviceConfiguration.fromJson(exchange.getRequestText());
-        }
-        catch(JsonParseException e){
-            exchange.respond(
-                CoAP.ResponseCode.BAD_REQUEST,
-                "Invalid DeviceConfiguration JSON format"
-            );
-            return;
-        }
-
-        if(deviceConfiguration == null || deviceConfiguration.deviceName == null){
-            exchange.respond(CoAP.ResponseCode.BAD_REQUEST, "Name not supplied");
-            return;
-        }
-        else if(deviceConfiguration.deviceType == null){
-            exchange.respond(CoAP.ResponseCode.BAD_REQUEST, "Device Type not supplied");
-            return;
-        }
-        deviceConfiguration.address = exchange.getSourceAddress();
-
-        // Add device to SH internal representation
-        Device device = new Device( deviceConfiguration );
-        securityHub.addDevice(device);
-
-        exchange.respond(CoAP.ResponseCode.VALID);
     }
 }

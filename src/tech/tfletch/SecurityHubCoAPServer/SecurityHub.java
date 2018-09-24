@@ -1,5 +1,7 @@
 package tech.tfletch.SecurityHubCoAPServer;
 
+import tech.tfletch.SecurityHubCoAPServer.Utility.DeviceNotFoundException;
+
 import java.net.InetAddress;
 import java.util.ArrayList;
 
@@ -41,13 +43,13 @@ public class SecurityHub {
     public ArrayList<Device> getConnectedDevices(){
         return deviceList;
     }
-    public Device getDeviceByIP(InetAddress address){
+    public Device getDeviceByIP(InetAddress address) throws DeviceNotFoundException{
         for(Device device : deviceList){
             if(device.getAddress().equals(address)){
                 return device;
             }
         }
-        return null;
+        throw new DeviceNotFoundException();
     }
 
 }

@@ -1,6 +1,8 @@
 package tech.tfletch.SecurityHubCoAPServer;
 
 import tech.tfletch.SecurityHubCoAPServer.Responses.Message;
+import tech.tfletch.SecurityHubCoAPServer.Utility.DeviceNotFoundException;
+import tech.tfletch.SecurityHubCoAPServer.Utility.DeviceRegistrationException;
 import tech.tfletch.SecurityHubCoAPServer.Utility.TopicNotFoundException;
 
 import java.util.ArrayList;
@@ -56,13 +58,11 @@ public class QueueHandler {
     public ArrayList<Topic> getAvailableTopics(Device device){
         // This currently returns all topics. In the future, there will be
         // filtering for security purposes
-        ArrayList<Topic> toRet = new ArrayList<>();
-        toRet.addAll(topics.keySet());
-        return toRet;
+        return new ArrayList<>(topics.keySet());
     }
 
     public void addMessage(Message message) throws TopicNotFoundException{
-        Topic topic = getTopicByName(message.topic);
+        Topic topic = getTopicByName(message.topicID);
         if(topic == null){
             throw new TopicNotFoundException();
         }
@@ -70,6 +70,38 @@ public class QueueHandler {
         this.topics.get(topic).forEach(
             bucket -> bucket.queue.add(message)
         );
+    }
+
+    public void subscribeDeviceToTopic(Device device, Topic topic) throws DeviceNotFoundException, DeviceRegistrationException{
+        Bucket bucketToAdd = this.buckets
+            .stream()
+            .filter(bucket -> bucket.device.equals(device))
+            .findFirst()
+            .orElseThrow(DeviceNotFoundException::new);
+        if(this.topics.get(topic).contains(bucketToAdd)){
+            throw new DeviceRegistrationException();
+        }
+        else {
+            this.topics
+                    .get(topic)
+                    .add(bucketToAdd);
+        }
+    }
+    public void unsubscribeDeviceFromTopic(Device device, Topic topic) throws DeviceNotFoundException, DeviceRegistrationException {
+        Bucket bucketToRemove = this.buckets
+            .stream()
+            .filter(bucket -> bucket.device.equals(device))
+            .findFirst()
+            .orElseThrow(DeviceNotFoundException::new);
+
+        if(this.topics.get(topic).contains(bucketToRemove)){
+            this.topics
+                .get(topic)
+                .remove(bucketToRemove);
+        }else{
+            throw new DeviceRegistrationException();
+        }
+
     }
     public Message nextMessage(Device device){
         for(Bucket bucket : this.buckets){

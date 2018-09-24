@@ -5,7 +5,7 @@ import com.google.gson.GsonBuilder;
 
 public class TopicConfiguration {
     private static Gson gson = new GsonBuilder().create();
-    public String topicName;
+    public String topicID;
 
     public static TopicConfiguration fromJson(String json){
         return gson.fromJson(json, TopicConfiguration.class);
