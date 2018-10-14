@@ -33,6 +33,7 @@ public class Devices extends CoapResource {
                     securityHub.getConnectedDevices()
                             .stream()
                             .map(Device::getName)
+                            .map((name) -> "\"" + name + "\"")
                             .collect(Collectors.joining(",")) + "]"
             );
 
