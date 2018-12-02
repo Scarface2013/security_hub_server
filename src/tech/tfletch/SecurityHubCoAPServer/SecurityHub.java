@@ -36,9 +36,9 @@ public class SecurityHub {
 
     // Device Methods
     public void addDevice(Device device){
-        updateManager.trackDevice(device);
+        // updateManager.trackDevice(device);
         deviceList.add( device );
-        this.getQueueHandler().addBucket(device);
+        queueHandler.registerDevice(device);
     }
     public ArrayList<Device> getConnectedDevices(){
         return deviceList;

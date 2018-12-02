@@ -1,10 +1,12 @@
 package tech.tfletch.SecurityHubCoAPServer;
 
 import org.eclipse.californium.core.CoapClient;
+import org.eclipse.californium.core.CoapHandler;
 import org.eclipse.californium.core.CoapResponse;
 import org.eclipse.californium.core.coap.MediaTypeRegistry;
 import tech.tfletch.SecurityHubCoAPServer.Responses.DeviceConfiguration;
 import tech.tfletch.SecurityHubCoAPServer.Responses.DeviceUpdateInformation;
+import tech.tfletch.SecurityHubCoAPServer.Responses.Message;
 
 import java.io.*;
 import java.net.InetAddress;
@@ -18,7 +20,7 @@ import java.net.URL;
 * to be constructed outside of that endpoint.
 * */
 public class Device {
-    private String name;
+    private String name; // Probably better called UID because it needs to be unique.
     private String deviceType;
     private URL manufacturerURL;
     private String currentVersion;
@@ -48,14 +50,13 @@ public class Device {
     }
 
     public DeviceConfiguration deviceConfiguration(){
-        DeviceConfiguration deviceConfiguration = new DeviceConfiguration();
-
-        deviceConfiguration.deviceType = this.deviceType;
-        deviceConfiguration.deviceID = this.name;
-        deviceConfiguration.currentVersion = this.currentVersion;
-        deviceConfiguration.manufacturerURL = this.manufacturerURL;
-
-        return deviceConfiguration;
+        return new DeviceConfiguration(
+                this.name,
+                this.deviceType,
+                this.manufacturerURL,
+                this.currentVersion,
+                this.address
+        );
     }
 
     @Override
@@ -65,6 +66,25 @@ public class Device {
 
     public String getName() {
         return name;
+    }
+
+    // This should only be done on devices that implement the Security Hub CoAP Server (parent, superPeer, etc.).
+    public void sendMessage(Message message){
+        System.err.println("Sending message to super peer at address=" + "coap:/" + address.toString() + ":5683/Messages");
+        CoapClient sender = new CoapClient("coap:/" + address.toString() + ":5683/Messages");
+        CoapHandler handler = new CoapHandler() {
+            @Override
+            public void onLoad(CoapResponse coapResponse) {
+                System.err.println("Message sent with response=(" +coapResponse.getCode() + ") " + coapResponse.getResponseText());
+            }
+
+            @Override
+            public void onError() {
+                System.err.println("Message failed to send");
+            }
+        };
+        System.err.println(Message.toJson(message));
+        sender.post(handler, Message.toJson(message), MediaTypeRegistry.APPLICATION_JSON);
     }
 
     // Pings the device for activity

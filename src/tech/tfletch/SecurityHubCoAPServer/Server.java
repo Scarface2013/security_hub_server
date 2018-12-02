@@ -8,11 +8,14 @@ import tech.tfletch.SecurityHubCoAPServer.Resources.Device;
 import tech.tfletch.SecurityHubCoAPServer.Resources.Devices;
 import tech.tfletch.SecurityHubCoAPServer.Resources.Messages;
 import tech.tfletch.SecurityHubCoAPServer.Resources.Topics;
+import tech.tfletch.SecurityHubCoAPServer.Responses.DeviceConfiguration;
+import tech.tfletch.SecurityHubCoAPServer.Utility.SecurityHubConfiguration;
 
-import java.net.Inet4Address;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.SocketException;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.net.*;
+import java.util.Scanner;
 
 /*
 * Server is the way in which the devices interact with the Security Hub
@@ -22,23 +25,57 @@ public class Server extends CoapServer {
     private static final int COAP_PORT = NetworkConfig.getStandard().getInt(NetworkConfig.Keys.COAP_PORT);
 
     private Server() throws SocketException {
-        // Internal Tools
-        SecurityHub securityHub = new SecurityHub();
-        QueueHandler queueHandler = new QueueHandler();
+        SecurityHubConfiguration configuration;
+        try {
+            File file = new File("config.json");
+            System.err.println(file.getAbsolutePath());
+            Scanner s = new Scanner(file);
+            StringBuilder configData = new StringBuilder();
+            while(s.hasNextLine()) {
+                configData.append(s.nextLine());
+            }
 
-        securityHub.attachQueueHandler(queueHandler);
-        securityHub.attachUpdateHandler(new UpdateManager());
+            configuration = SecurityHubConfiguration.fromJson(
+                configData.toString()
+            );
 
-        // Endpoints
-        this.add(
-            new Devices(securityHub).add(
-                new Device(securityHub)
-            )
-        ).add(
-            new Messages(securityHub)
-        ).add(
-            new Topics(securityHub)
-        );
+            // Internal Tools
+            SecurityHub securityHub = new SecurityHub();
+            QueueHandler queueHandler = new QueueHandler(
+                    new tech.tfletch.SecurityHubCoAPServer.Device(
+                            new DeviceConfiguration(
+                                    "superPeer",
+                                    "superPeer",
+                                    new URL("http://127.0.0.1:80"),
+                                    "0.0.4",
+                                    configuration.superPeer
+                            )
+                    )
+            );
+
+            securityHub.attachQueueHandler(queueHandler);
+            //securityHub.attachUpdateHandler(new UpdateManager());
+
+            // Endpoints
+            this.add(
+                new Devices(securityHub).add(
+                    new Device(securityHub)
+                )
+            ).add(
+                new Messages(securityHub)
+            ).add(
+                new Topics(securityHub)
+            );
+        }
+        catch(FileNotFoundException e){
+            System.err.println("Configuration file not found");
+            System.exit(1);
+        }
+        catch (MalformedURLException e){
+            e.printStackTrace();
+            System.exit(1);
+        }
+
     }
 
     private void addEndpoints(){

@@ -21,6 +21,14 @@ public class DeviceConfiguration {
 
     public InetAddress address;
 
+    public DeviceConfiguration(String deviceID, String deviceType, URL manufacturerURL, String currentVersion, InetAddress address){
+        this.deviceID = deviceID;
+        this.deviceType = deviceType;
+        this.manufacturerURL = manufacturerURL;
+        this.currentVersion = currentVersion;
+        this.address = address;
+    }
+
     public static DeviceConfiguration fromJson(String json){
         return gson.fromJson(json, DeviceConfiguration.class);
     }

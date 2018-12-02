@@ -6,12 +6,14 @@ import com.google.gson.GsonBuilder;
 public class Message {
     public String topicID;
     public String messageBody;
+    public boolean hasPropagatedToSuperPeer;
 
     private static Gson gson = new GsonBuilder().create();
 
-    public Message(String topic, String messageBody){
+    public Message(String topic, String messageBody, boolean hasPropagatedToSuperPeer){
         this.topicID = topic;
         this.messageBody = messageBody;
+        this.hasPropagatedToSuperPeer = hasPropagatedToSuperPeer;
     }
 
     public static Message fromJson(String json){
