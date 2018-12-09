@@ -4,13 +4,16 @@ import org.eclipse.californium.core.CoapClient;
 import org.eclipse.californium.core.CoapHandler;
 import org.eclipse.californium.core.CoapResponse;
 import org.eclipse.californium.core.coap.MediaTypeRegistry;
+import org.eclipse.californium.core.network.EndpointManager;
 import tech.tfletch.SecurityHubCoAPServer.Responses.DeviceConfiguration;
 import tech.tfletch.SecurityHubCoAPServer.Responses.DeviceUpdateInformation;
 import tech.tfletch.SecurityHubCoAPServer.Responses.Message;
 
 import java.io.*;
 import java.net.InetAddress;
+import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.UUID;
 
 /*
 * Represents a device that has registered for the network.
@@ -66,6 +69,37 @@ public class Device {
 
     public String getName() {
         return name;
+    }
+
+    public void register(){
+        System.err.println("Registering security hub with super peer at address=" + "coap:/" + address.toString() + ":5683/Messages");
+        CoapClient sender = new CoapClient("coap:/" + address.toString() + ":5683/Devices");
+        CoapHandler handler = new CoapHandler() {
+            @Override
+            public void onLoad(CoapResponse coapResponse) {
+                System.out.println("Device registered with response=(" +coapResponse.getCode() + ") " + coapResponse.getResponseText());
+            }
+
+            @Override
+            public void onError() {
+                System.err.println("Device registration failed with superPeer");
+            }
+        };
+
+        try {
+            DeviceConfiguration deviceConfiguration = new DeviceConfiguration(
+                    UUID.randomUUID().toString(),
+                    "Security Hub",
+                    new URL("http://127.0.0.1"),
+                    "0.0.3",
+                    EndpointManager.getEndpointManager().getDefaultEndpoint().getAddress().getAddress()
+            );
+
+            sender.post(handler, DeviceConfiguration.toJson(deviceConfiguration), MediaTypeRegistry.APPLICATION_JSON);
+        }
+        catch(MalformedURLException e){
+            e.printStackTrace();
+        }
     }
 
     // This should only be done on devices that implement the Security Hub CoAP Server (parent, superPeer, etc.).

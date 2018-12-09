@@ -84,7 +84,7 @@ public class Server extends CoapServer {
             // Once the SH is actually up and running, we should explicitly
             // bind to out wlan0 address (10.0.0.1 currently)
             if( addr instanceof Inet4Address && !addr.isLoopbackAddress()){
-                CoapEndpoint endpoint = new CoapEndpoint(new InetSocketAddress(addr,COAP_PORT));
+                CoapEndpoint endpoint = new CoapEndpoint(new InetSocketAddress(addr, COAP_PORT));
                 this.addEndpoint(endpoint);
             }
         }

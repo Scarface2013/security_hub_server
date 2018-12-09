@@ -36,6 +36,8 @@ public class QueueHandler {
     public QueueHandler(Device superPeer){
         this.superPeer = superPeer;
 
+        superPeer.register();
+
         this.nodeFilter = BloomFilter.create(
             TopicFunnel.INSTANCE, 1_000
         );
@@ -47,7 +49,6 @@ public class QueueHandler {
     }
 
     public void registerDevice(Device device){
-        System.err.println("Device registering");
         Topic topic = new Topic(device.getName());
         this.addTopic(topic);
         messageQueue.put(device, new LinkedList<>());
@@ -56,14 +57,11 @@ public class QueueHandler {
             this.subscribeDeviceToTopic(device, topic);
         }
         catch(DeviceRegistrationException|DeviceNotFoundException e){
-            System.err.println("Error Registering device to topic");
             e.printStackTrace();
         }
     }
     public void addTopic(Topic topic){
-        System.err.println("Topic registering");
         topics.put(topic.getName(), topic);
-        System.err.println("Topic registered");
     }
 
     public Topic getTopicByName(String topicName){
@@ -80,14 +78,12 @@ public class QueueHandler {
 
 
     public void addMessage(Message message) throws TopicNotFoundException {
-        System.err.println("Message adding");
         Topic topic = getTopicByName(message.topicID);
         if(topic == null) throw new TopicNotFoundException();
 
         // If we're the first device to see this message (we got it from an IOT node), then we need to sent it up
         // to our super peer to see if it's anywhere else in the network instead of handling it normally
         if(!message.hasPropagatedToSuperPeer){
-            System.err.println("Sent to super peer");
             message.hasPropagatedToSuperPeer = true;
             superPeer.sendMessage(message);
             return;
@@ -95,7 +91,6 @@ public class QueueHandler {
 
         // Check hot filter
         if(descendantNodeCache.get(topic) != null){
-            System.err.println("Hot filter hit");
             ArrayList<Device> devices = descendantNodeCache.get(topic);
 
             for(Device device : devices){
@@ -121,10 +116,8 @@ public class QueueHandler {
     }
 
     public void subscribeDeviceToTopic(Device device, Topic topic) throws DeviceNotFoundException, DeviceRegistrationException{
-        System.err.println("Subscribing device to topic");
         BloomFilter<Topic> filter = descendantNodeFilters.get(device);
         if(filter == null) {
-            System.err.println("Creating filter");
             filter = BloomFilter.create(
                 TopicFunnel.INSTANCE, 1_000
             );
@@ -133,7 +126,6 @@ public class QueueHandler {
 
         filter.put(topic);
         this.nodeFilter.put(topic);
-        System.err.println("Done");
     }
     // We can't do this...
     public void unsubscribeDeviceFromTopic(Device device, Topic topic) throws DeviceNotFoundException, DeviceRegistrationException {
